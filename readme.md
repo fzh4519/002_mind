@@ -1,5 +1,5 @@
 
-# CVPR2021 - Learning Traidic Belief Dynamics in Nonverbal Communication from Videos
+# CVPR2021-从视频学习非言语交流中的信念动力学
 
 Introduction
 ----
