@@ -4,7 +4,7 @@
 
 ### 训练
 
-1. 可以通过运行生成训练数据 `python get_data.py`
+1. 可以通过运行`get_data.py`生成训练数据 
 2. 从[这里](https://github.com/LifengFan/Triadic-Belief-Dynamics/blob/main/src/attention_classifier/xxxxx)下载预训练模型并将其放入 ./pretrained
 3. 在` attention_classifier.py `中运行 `main() `进行训练
 

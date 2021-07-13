@@ -1,4 +1,5 @@
 import sys
+
 sys.path.append('../data_processing_scripts/')
 from annotation_clean import *
 from mind_model_att import *
@@ -17,6 +18,7 @@ import glob
 import copy
 from sklearn.preprocessing import OneHotEncoder
 
+
 def seg2frame_score(tracker_seg):
     event_frame = np.zeros((tracker_seg['cp'][-1], 3))
     for idx in range(len(tracker_seg['cp']) - 1):
@@ -24,11 +26,12 @@ def seg2frame_score(tracker_seg):
         end = tracker_seg['cp'][idx + 1]
         # event = np.zeros((1, 3))
         # event[0][tracker_seg['event'][idx][0]] = 1
-        event=tracker_seg['event_vec'][idx]
+        event = tracker_seg['event_vec'][idx]
 
         for i in range(start, end):
             event_frame[i, :] = event
     return event_frame
+
 
 def check_overlap_return_area(head_box, obj_curr):
     max_left = max(head_box[0], obj_curr[0])
@@ -36,8 +39,9 @@ def check_overlap_return_area(head_box, obj_curr):
     min_right = min(head_box[2], obj_curr[2])
     min_bottom = min(head_box[3], obj_curr[3])
     if (min_right - max_left) > 0 and (min_bottom - max_top) > 0:
-        return (min_right - max_left)*(min_bottom - max_top)
+        return (min_right - max_left) * (min_bottom - max_top)
     return -100
+
 
 def get_grid_location_using_bbox(obj_frame):
     x_min = obj_frame[0]
@@ -46,9 +50,10 @@ def get_grid_location_using_bbox(obj_frame):
     y_max = obj_frame[1] + obj_frame[3]
     gridLW = 1280 / 25.
     gridLH = 720 / 15.
-    center_x, center_y = (x_min + x_max)/2, (y_min + y_max)/2
+    center_x, center_y = (x_min + x_max) / 2, (y_min + y_max) / 2
     X, Y = int(center_x / gridLW), int(center_y / gridLH)
     return X, Y
+
 
 def get_obj_name(obj_bbox, annt, frame_id):
     obj_candidates = annt.loc[annt.frame == frame_id]
@@ -56,16 +61,18 @@ def get_obj_name(obj_bbox, annt, frame_id):
     max_name = None
     max_bbox = None
     obj_bbox = [obj_bbox[0], obj_bbox[1], obj_bbox[0] + obj_bbox[2], obj_bbox[1] + obj_bbox[3]]
-    obj_area = (obj_bbox[2] - obj_bbox[0])*(obj_bbox[3] - obj_bbox[1])
+    obj_area = (obj_bbox[2] - obj_bbox[0]) * (obj_bbox[3] - obj_bbox[1])
     for index, obj_candidate in obj_candidates.iterrows():
         if obj_candidate['name'].startswith('P'):
             continue
         if obj_candidate['lost'] == 1:
             continue
-        candidate_bbox = [obj_candidate['x_min'], obj_candidate['y_min'], obj_candidate['x_max'], obj_candidate['y_max']]
-        candidate_area = (obj_candidate['x_max'] - obj_candidate['x_min'])*(obj_candidate['y_max'] - obj_candidate['y_min'])
+        candidate_bbox = [obj_candidate['x_min'], obj_candidate['y_min'], obj_candidate['x_max'],
+                          obj_candidate['y_max']]
+        candidate_area = (obj_candidate['x_max'] - obj_candidate['x_min']) * (
+                    obj_candidate['y_max'] - obj_candidate['y_min'])
         overlap = check_overlap_return_area(obj_bbox, candidate_bbox)
-        if overlap > max_overlap and overlap/obj_area < 1.2 and overlap/obj_area > 0.3 and overlap/candidate_area <1.2 and overlap/candidate_area>0.3:
+        if overlap > max_overlap and overlap / obj_area < 1.2 and overlap / obj_area > 0.3 and overlap / candidate_area < 1.2 and overlap / candidate_area > 0.3:
             max_overlap = overlap
             max_name = obj_candidate['name']
             max_bbox = candidate_bbox
@@ -73,14 +80,15 @@ def get_obj_name(obj_bbox, annt, frame_id):
         return max_name, max_bbox
     return None, None
 
-def update_memory(memory, mind_name, fluent, loc):
 
+def update_memory(memory, mind_name, fluent, loc):
     if fluent == 0 or fluent == 2:
         memory[mind_name]['loc'] = loc
     elif fluent == 1:
         memory[mind_name]['loc'] = None
 
     return memory
+
 
 def get_posterior(likelihood, mind_prior, transition_prior, eid1, eid2):
     assert abs(np.sum(likelihood) - 1) < 0.0001
@@ -90,9 +98,10 @@ def get_posterior(likelihood, mind_prior, transition_prior, eid1, eid2):
 
     pos1 = likelihood * (mind_prior[eid1].dot(transition_prior[eid1]))
     pos2 = likelihood * (mind_prior[eid2].dot(transition_prior[eid2]))
-    pos = (pos2 + pos1)/2
-    pos = pos/np.sum(pos)
+    pos = (pos2 + pos1) / 2
+    pos = pos / np.sum(pos)
     return pos
+
 
 def get_gt_data():
     reannotation_path = './regenerate_annotation/'
@@ -102,7 +111,7 @@ def get_gt_data():
     att_path = './att_vec/'
     model_path = './cptk/model_best.pth'
     save_path = './mind_full_likelihood_new_att/'
-    tree_path =  './BestTree_full_0915/'
+    tree_path = './BestTree_full_0915/'
     if not os.path.exists(save_path):
         os.makedirs(save_path)
 
@@ -137,7 +146,7 @@ def get_gt_data():
     net.cuda()
     net.eval()
 
-    mind_combination = list(product([0, 1, 2, 3], repeat = 5))
+    mind_combination = list(product([0, 1, 2, 3], repeat=5))
     for clip in clips:
         clip_name = clip.split('.')[0]
         if not os.path.exists(reannotation_path + clip):
@@ -150,7 +159,6 @@ def get_gt_data():
         if not os.path.exists(save_prefix):
             os.makedirs(save_prefix)
 
-
         tracker_seg = tree['T']
         battery_seg = tree['B']
 
@@ -161,7 +169,7 @@ def get_gt_data():
         #                                              len(img_names))
         # battery_events_by_frame = reformat_events_gt(event_seg_battery[clip_name],
         #                                              len(img_names))
-        assert  tracker_events_by_frame.shape == battery_events_by_frame.shape
+        assert tracker_events_by_frame.shape == battery_events_by_frame.shape
 
         with open(reannotation_path + clip, 'rb') as f:
             obj_records = pickle.load(f)
@@ -169,7 +177,6 @@ def get_gt_data():
             features = pickle.load(f)
         with open(att_path + clip, 'rb') as f:
             att_vec = pickle.load(f)
-
 
         if person_ids[clip.split('.')[0]] == 'P1':
             p1_events_by_frame = tracker_events_by_frame
@@ -183,9 +190,9 @@ def get_gt_data():
             p1_hog = features[2]
             p2_hog = features[1]
 
-
         annt = pd.read_csv(annotation_path + clip.split('.')[0] + '.txt', sep=",", header=None)
-        annt.columns = ["obj_id", "x_min", "y_min", "x_max", "y_max", "frame", "lost", "occluded", "generated", "name","label"]
+        annt.columns = ["obj_id", "x_min", "y_min", "x_max", "y_max", "frame", "lost", "occluded", "generated", "name",
+                        "label"]
         obj_names = annt.name.unique()
 
         mind_dict = {'m1': 0, 'm2': 1, 'm12': 2, 'm21': 3, 'mc': 4}
@@ -196,8 +203,10 @@ def get_gt_data():
                 continue
             print(obj_name)
 
-            memory = {'mg':{'fluent':None, 'loc':None}, 'mc':{'fluent':None, 'loc':None}, 'm21':{'fluent':None, 'loc':None},
-                      'm12': {'fluent': None, 'loc': None}, 'm1':{'fluent':None, 'loc':None}, 'm2':{'fluent':None, 'loc':None}}
+            memory = {'mg': {'fluent': None, 'loc': None}, 'mc': {'fluent': None, 'loc': None},
+                      'm21': {'fluent': None, 'loc': None},
+                      'm12': {'fluent': None, 'loc': None}, 'm1': {'fluent': None, 'loc': None},
+                      'm2': {'fluent': None, 'loc': None}}
             mind_output_gt = []
             mind_output = []
             for frame_id in range(p1_events_by_frame.shape[0]):
@@ -224,7 +233,7 @@ def get_gt_data():
                         memory_dist[mind_dict[mind_name]] = 0
                         indicator[mind_dict[mind_name]] = 0
                     else:
-                        if frame_id%50 == 0:
+                        if frame_id % 50 == 0:
                             memory_loc = obj_record[mind_name]['loc']
                         else:
                             memory_loc = memory[mind_name]['loc']
@@ -247,10 +256,10 @@ def get_gt_data():
                 eid1 = np.argmax(p1_event)
                 eid2 = np.argmax(p2_event)
                 m = net(event_input)
-                mind_pred = torch.softmax(m, dim = -1).data.cpu().numpy()
+                mind_pred = torch.softmax(m, dim=-1).data.cpu().numpy()
                 mind_posterior = mind_pred
                 # mind_posterior = get_posterior(mind_pred, event_mind_prob, mind_transition_prob, eid1, eid2)
-                mind_output.append({'mind':mind_posterior, 'p1_event':p1_event, 'p2_event':p2_event})
+                mind_output.append({'mind': mind_posterior, 'p1_event': p1_event, 'p2_event': p2_event})
                 mid = np.argmax(mind_posterior)
                 pred_combination = mind_combination[mid]
 
@@ -266,6 +275,7 @@ def get_gt_data():
                 with open(save_prefix + obj_name.split('/')[-1] + '.p', 'wb') as f:
                     pickle.dump([mind_output, mind_output_gt], f)
 
+
 def get_gt_data_cnn():
     reannotation_path = '/home/shuwen/projects/six_minds/data/data_preprocessing2/regenerate_annotation/'
     annotation_path = '/home/shuwen/projects/six_minds/data/data_preprocessing2/reformat_annotation/'
@@ -274,7 +284,7 @@ def get_gt_data_cnn():
     att_path = '/home/shuwen/projects/six_minds/data/Six-MInds-Project/obj_oriented_event/att_vec/'
     model_path = '../mind_change_classifier/cptk_combined_raw_feature_mem/model_best.pth'
     save_path = './mind_cnn/'
-    tree_path =  '../mind_change_classifier/BestTree_full_0915/'
+    tree_path = '../mind_change_classifier/BestTree_full_0915/'
     pair_feature_path = '/home/shuwen/projects/six_minds/data/data_preprocessing2/feature_pair/'
     if not os.path.exists(save_path):
         os.makedirs(save_path)
@@ -310,7 +320,7 @@ def get_gt_data_cnn():
     net.cuda()
     net.eval()
 
-    mind_combination = list(product([0, 1, 2, 3], repeat = 5))
+    mind_combination = list(product([0, 1, 2, 3], repeat=5))
     for clip in clips:
         clip_name = clip.split('.')[0]
         if not os.path.exists(reannotation_path + clip):
@@ -325,7 +335,6 @@ def get_gt_data_cnn():
         if not os.path.exists(save_prefix):
             os.makedirs(save_prefix)
 
-
         tracker_seg = tree['T']
         battery_seg = tree['B']
 
@@ -336,7 +345,7 @@ def get_gt_data_cnn():
         #                                              len(img_names))
         # battery_events_by_frame = reformat_events_gt(event_seg_battery[clip_name],
         #                                              len(img_names))
-        assert  tracker_events_by_frame.shape == battery_events_by_frame.shape
+        assert tracker_events_by_frame.shape == battery_events_by_frame.shape
 
         with open(reannotation_path + clip, 'rb') as f:
             obj_records = pickle.load(f)
@@ -344,7 +353,6 @@ def get_gt_data_cnn():
             features = pickle.load(f)
         with open(att_path + clip, 'rb') as f:
             att_vec = pickle.load(f)
-
 
         if person_ids[clip.split('.')[0]] == 'P1':
             p1_events_by_frame = tracker_events_by_frame
@@ -359,7 +367,8 @@ def get_gt_data_cnn():
             p2_hog = features[1]
 
         annt = pd.read_csv(annotation_path + clip.split('.')[0] + '.txt', sep=",", header=None)
-        annt.columns = ["obj_id", "x_min", "y_min", "x_max", "y_max", "frame", "lost", "occluded", "generated", "name","label"]
+        annt.columns = ["obj_id", "x_min", "y_min", "x_max", "y_max", "frame", "lost", "occluded", "generated", "name",
+                        "label"]
         obj_names = annt.name.unique()
 
         mind_dict = {'m1': 0, 'm2': 1, 'm12': 2, 'm21': 3, 'mc': 4}
@@ -370,8 +379,10 @@ def get_gt_data_cnn():
                 continue
             print(obj_name)
 
-            memory = {'mg':{'fluent':None, 'loc':None}, 'mc':{'fluent':None, 'loc':None}, 'm21':{'fluent':None, 'loc':None},
-                      'm12': {'fluent': None, 'loc': None}, 'm1':{'fluent':None, 'loc':None}, 'm2':{'fluent':None, 'loc':None}}
+            memory = {'mg': {'fluent': None, 'loc': None}, 'mc': {'fluent': None, 'loc': None},
+                      'm21': {'fluent': None, 'loc': None},
+                      'm12': {'fluent': None, 'loc': None}, 'm1': {'fluent': None, 'loc': None},
+                      'm2': {'fluent': None, 'loc': None}}
             mind_output_gt = []
             mind_output = []
             for frame_id in range(p1_events_by_frame.shape[0]):
@@ -398,7 +409,7 @@ def get_gt_data_cnn():
                         memory_dist[mind_dict[mind_name]] = 0
                         indicator[mind_dict[mind_name]] = 0
                     else:
-                        if frame_id%50 == 0:
+                        if frame_id % 50 == 0:
                             memory_loc = obj_record[mind_name]['loc']
                         else:
                             memory_loc = memory[mind_name]['loc']
@@ -424,10 +435,10 @@ def get_gt_data_cnn():
                 eid1 = np.argmax(p1_event)
                 eid2 = np.argmax(p2_event)
                 m = net(hog_feature, event_input)
-                mind_pred = torch.softmax(m, dim = -1).data.cpu().numpy()
+                mind_pred = torch.softmax(m, dim=-1).data.cpu().numpy()
                 mind_posterior = mind_pred
                 # mind_posterior = get_posterior(mind_pred, event_mind_prob, mind_transition_prob, eid1, eid2)
-                mind_output.append({'mind':mind_posterior, 'p1_event':p1_event, 'p2_event':p2_event})
+                mind_output.append({'mind': mind_posterior, 'p1_event': p1_event, 'p2_event': p2_event})
                 mid = np.argmax(mind_posterior)
                 pred_combination = mind_combination[mid]
 
@@ -443,6 +454,7 @@ def get_gt_data_cnn():
                 with open(save_prefix + obj_name.split('/')[-1] + '.p', 'wb') as f:
                     pickle.dump([mind_output, mind_output_gt], f)
 
+
 def get_gt_data_cnn_beam_search():
     reannotation_path = '/home/shuwen/projects/six_minds/data/data_preprocessing2/regenerate_annotation/'
     annotation_path = '/home/shuwen/projects/six_minds/data/data_preprocessing2/reformat_annotation/'
@@ -451,7 +463,7 @@ def get_gt_data_cnn_beam_search():
     att_path = '/home/shuwen/projects/six_minds/data/Six-MInds-Project/obj_oriented_event/att_vec/'
     model_path = '../mind_change_classifier/cptk_combined_raw_feature_mem/model_best.pth'
     save_path = './mind_cnn_beam_search/'
-    tree_path =  '../mind_change_classifier/BestTree_full_0915/'
+    tree_path = '../mind_change_classifier/BestTree_full_0915/'
     pair_feature_path = '/home/shuwen/projects/six_minds/data/data_preprocessing2/feature_pair/'
     if not os.path.exists(save_path):
         os.makedirs(save_path)
@@ -487,7 +499,7 @@ def get_gt_data_cnn_beam_search():
     net.cuda()
     net.eval()
 
-    mind_combination = list(product([0, 1, 2, 3], repeat = 5))
+    mind_combination = list(product([0, 1, 2, 3], repeat=5))
     for clip in clips:
         clip_name = clip.split('.')[0]
         if not os.path.exists(reannotation_path + clip):
@@ -502,7 +514,6 @@ def get_gt_data_cnn_beam_search():
         if not os.path.exists(save_prefix):
             os.makedirs(save_prefix)
 
-
         tracker_seg = tree['T']
         battery_seg = tree['B']
 
@@ -513,7 +524,7 @@ def get_gt_data_cnn_beam_search():
         #                                              len(img_names))
         # battery_events_by_frame = reformat_events_gt(event_seg_battery[clip_name],
         #                                              len(img_names))
-        assert  tracker_events_by_frame.shape == battery_events_by_frame.shape
+        assert tracker_events_by_frame.shape == battery_events_by_frame.shape
 
         with open(reannotation_path + clip, 'rb') as f:
             obj_records = pickle.load(f)
@@ -521,7 +532,6 @@ def get_gt_data_cnn_beam_search():
             features = pickle.load(f)
         with open(att_path + clip, 'rb') as f:
             att_vec = pickle.load(f)
-
 
         if person_ids[clip.split('.')[0]] == 'P1':
             p1_events_by_frame = tracker_events_by_frame
@@ -536,7 +546,8 @@ def get_gt_data_cnn_beam_search():
             p2_hog = features[1]
 
         annt = pd.read_csv(annotation_path + clip.split('.')[0] + '.txt', sep=",", header=None)
-        annt.columns = ["obj_id", "x_min", "y_min", "x_max", "y_max", "frame", "lost", "occluded", "generated", "name","label"]
+        annt.columns = ["obj_id", "x_min", "y_min", "x_max", "y_max", "frame", "lost", "occluded", "generated", "name",
+                        "label"]
         obj_names = annt.name.unique()
 
         mind_dict = {'m1': 0, 'm2': 1, 'm12': 2, 'm21': 3, 'mc': 4}
@@ -549,11 +560,13 @@ def get_gt_data_cnn_beam_search():
 
             memories = []
             for temp_id in range(5):
-                memory = {'mg':{'fluent':None, 'loc':None}, 'mc':{'fluent':None, 'loc':None}, 'm21':{'fluent':None, 'loc':None},
-                          'm12': {'fluent': None, 'loc': None}, 'm1':{'fluent':None, 'loc':None}, 'm2':{'fluent':None, 'loc':None}}
+                memory = {'mg': {'fluent': None, 'loc': None}, 'mc': {'fluent': None, 'loc': None},
+                          'm21': {'fluent': None, 'loc': None},
+                          'm12': {'fluent': None, 'loc': None}, 'm1': {'fluent': None, 'loc': None},
+                          'm2': {'fluent': None, 'loc': None}}
                 memories.append(memory)
             mind_output_gt = []
-            pred_minds = {0:[], 1:[], 2:[], 3:[], 4:[]}
+            pred_minds = {0: [], 1: [], 2: [], 3: [], 4: []}
             search_results = {}
             for frame_id in range(p1_events_by_frame.shape[0]):
                 # curr_loc
@@ -564,7 +577,7 @@ def get_gt_data_cnn_beam_search():
                 mind_output_gt.append(obj_record)
 
                 # memory
-                all_possible_paths = np.array([1,2])
+                all_possible_paths = np.array([1, 2])
                 all_possible_minds = np.array([1, 2])
                 if frame_id == 0:
                     memory_dist = [None, None, None, None, None]
@@ -587,10 +600,10 @@ def get_gt_data_cnn_beam_search():
                     hog_feature = torch.from_numpy(hog_feature).float().cuda().view((1, -1))
                     m = net(hog_feature, event_input)
                     mind_pred = torch.softmax(m, dim=-1).data.cpu().numpy().reshape(-1)
-                    new_score = -1*1e-6*np.ones(1024)
+                    new_score = -1 * 1e-6 * np.ones(1024)
                     new_score[mind_pred > 0] = np.log(mind_pred[mind_pred > 0])
                     all_possible_paths = np.append(all_possible_paths, new_score)
-                    all_possible_minds = np.append(all_possible_minds, -1*np.ones(1024))
+                    all_possible_minds = np.append(all_possible_minds, -1 * np.ones(1024))
                 else:
                     for rid, result in enumerate(search_results[frame_id - 1]):
                         memory_dist = [None, None, None, None, None]
@@ -604,7 +617,7 @@ def get_gt_data_cnn_beam_search():
                                 memory_dist[mind_dict[mind_name]] = 0
                                 indicator[mind_dict[mind_name]] = 0
                             else:
-                                if frame_id%50 == 0:
+                                if frame_id % 50 == 0:
                                     memory_loc = obj_record[mind_name]['loc']
                                 else:
                                     memory_loc = memory[mind_name]['loc']
@@ -628,7 +641,7 @@ def get_gt_data_cnn_beam_search():
                         hog_feature = np.hstack([p1_hog[frame_id], p2_hog[frame_id], pair_features[frame_id]])
                         hog_feature = torch.from_numpy(hog_feature).float().cuda().view((1, -1))
                         m = net(hog_feature, event_input)
-                        mind_pred = torch.softmax(m, dim = -1).data.cpu().numpy().reshape(-1)
+                        mind_pred = torch.softmax(m, dim=-1).data.cpu().numpy().reshape(-1)
                         new_score = mind_pred
                         new_score[mind_pred > 0] += np.log(mind_pred[mind_pred > 0])
                         new_score[mind_pred <= 0] -= 1e-6
@@ -643,10 +656,10 @@ def get_gt_data_cnn_beam_search():
                 # mind_output.append({'mind':mind_posterior, 'p1_event':p1_event, 'p2_event':p2_event})
                 # mid = np.argsort(mind_posterior)[::-1]
                 search_results[frame_id] = []
-                pred_minds_temp = {0:[], 1:[], 2:[], 3:[], 4:[]}
+                pred_minds_temp = {0: [], 1: [], 2: [], 3: [], 4: []}
                 for temp_id in range(5):
                     com_id = mid[temp_id]
-                    com_id_t = com_id%1024
+                    com_id_t = com_id % 1024
                     pred_combination = mind_combination[com_id_t]
                     if frame_id == 0:
                         memory = copy.deepcopy(memories[0])
@@ -677,6 +690,7 @@ def get_gt_data_cnn_beam_search():
             if len(mind_output) > 0:
                 with open(save_prefix + obj_name.split('/')[-1] + '.p', 'wb') as f:
                     pickle.dump([mind_output, mind_output_gt], f)
+
 
 def test_raw_data():
     reannotation_path = './regenerate_annotation/'
@@ -735,8 +749,10 @@ def test_raw_data():
             print(obj_name)
             with open(obj_name, 'rb') as f:
                 obj_bboxs = pickle.load(f)
-            memory = {'mg':{'fluent':None, 'loc':None}, 'mc':{'fluent':None, 'loc':None}, 'm21':{'fluent':None, 'loc':None},
-                      'm12': {'fluent': None, 'loc': None}, 'm1':{'fluent':None, 'loc':None}, 'm2':{'fluent':None, 'loc':None}}
+            memory = {'mg': {'fluent': None, 'loc': None}, 'mc': {'fluent': None, 'loc': None},
+                      'm21': {'fluent': None, 'loc': None},
+                      'm12': {'fluent': None, 'loc': None}, 'm1': {'fluent': None, 'loc': None},
+                      'm2': {'fluent': None, 'loc': None}}
             mind_output_gt = []
             mind_output = []
             for frame_id in range(p1_events_by_frame.shape[0]):
@@ -813,21 +829,22 @@ def test_raw_data():
                 with open(save_prefix + obj_name.split('/')[-1].split('.')[0] + '.p', 'wb') as f:
                     pickle.dump([mind_output, mind_output_gt], f)
 
+
 def marginalize(predictions):
     assert abs(np.sum(predictions) - 1) < 0.0001
     mind_combination = list(product([0, 1, 2, 3], repeat=5))
-    mind_dict = {key:predictions[0][mid] for mid, key in enumerate(mind_combination)}
-    score_dict = {'m1':[0, 0, 0, 0], 'm2':[0, 0, 0, 0], 'm12':[0, 0, 0, 0], 'm21':[0, 0, 0, 0], 'mc':[0, 0, 0, 0]}
-    key_hash = {0:'m1', 1:'m2', 2:'m12', 3:'m21', 4:'mc'}
+    mind_dict = {key: predictions[0][mid] for mid, key in enumerate(mind_combination)}
+    score_dict = {'m1': [0, 0, 0, 0], 'm2': [0, 0, 0, 0], 'm12': [0, 0, 0, 0], 'm21': [0, 0, 0, 0], 'mc': [0, 0, 0, 0]}
+    key_hash = {0: 'm1', 1: 'm2', 2: 'm12', 3: 'm21', 4: 'mc'}
     for mid, key in enumerate(mind_dict):
         for i in range(5):
             for j in range(4):
                 if key[i] == j:
                     score_dict[key_hash[i]][j] += mind_dict[key]
-    assert abs(sum(score_dict['m1']) - 1)< 0.0001
-    assert abs(sum(score_dict['m2']) - 1)< 0.0001
-    assert abs(sum(score_dict['m12']) - 1)< 0.0001
-    assert abs(sum(score_dict['m21']) - 1)< 0.0001
+    assert abs(sum(score_dict['m1']) - 1) < 0.0001
+    assert abs(sum(score_dict['m2']) - 1) < 0.0001
+    assert abs(sum(score_dict['m12']) - 1) < 0.0001
+    assert abs(sum(score_dict['m21']) - 1) < 0.0001
     assert abs(sum(score_dict['mc']) - 1) < 0.0001
 
     return score_dict
@@ -839,6 +856,7 @@ def plot_confusion_matrix(cmc, title):
     sn.heatmap(df_cm, annot=True, annot_kws={"size": 16})  # font size
     plt.savefig('./confusion_mat_plot/{}.png'.format(title))
     plt.show()
+
 
 def roc_plot(mc_r, mc_s, title, type):
     fpr = dict()
@@ -857,22 +875,26 @@ def roc_plot(mc_r, mc_s, title, type):
         fpr[i], tpr[i], _ = metrics.roc_curve(mc_r_one_hot[:, i], mc_s[:, i])
         roc_auc[i] = metrics.auc(fpr[i], tpr[i])
     plt.figure()
-    d0 = {'fpr':fpr[0], 'tpr':tpr[0], 'belief dynamics':['class:' + str(0) + '(area = %0.2f)' % roc_auc[0]]*len(fpr[0])}
+    d0 = {'fpr': fpr[0], 'tpr': tpr[0],
+          'belief dynamics': ['class:' + str(0) + '(area = %0.2f)' % roc_auc[0]] * len(fpr[0])}
     df0 = pd.DataFrame(data=d0)
-    d1 = {'fpr': fpr[1], 'tpr': tpr[1], 'belief dynamics': ['class:' + str(1) + '(area = %0.2f)' % roc_auc[1]]*len(fpr[1])}
+    d1 = {'fpr': fpr[1], 'tpr': tpr[1],
+          'belief dynamics': ['class:' + str(1) + '(area = %0.2f)' % roc_auc[1]] * len(fpr[1])}
     df1 = pd.DataFrame(data=d1)
-    d2 = {'fpr': fpr[2], 'tpr': tpr[2], 'belief dynamics': ['class:' + str(2) + '(area = %0.2f)' % roc_auc[2]]*len(fpr[2])}
+    d2 = {'fpr': fpr[2], 'tpr': tpr[2],
+          'belief dynamics': ['class:' + str(2) + '(area = %0.2f)' % roc_auc[2]] * len(fpr[2])}
     df2 = pd.DataFrame(data=d2)
-    d3 = {'fpr': fpr[3], 'tpr': tpr[3], 'belief dynamics': ['class:' + str(3) + '(area = %0.2f)' % roc_auc[3]]*len(fpr[3])}
+    d3 = {'fpr': fpr[3], 'tpr': tpr[3],
+          'belief dynamics': ['class:' + str(3) + '(area = %0.2f)' % roc_auc[3]] * len(fpr[3])}
     df3 = pd.DataFrame(data=d3)
     df = pd.concat([df0, df1, df2, df3])
-    db = {'x':[0, 0], 'y':[1, 1]}
+    db = {'x': [0, 0], 'y': [1, 1]}
     db_f = pd.DataFrame(data=db)
     b = sn.lineplot(
         data=df, x="fpr", y="tpr",
         hue="belief dynamics", ci=None, legend="full", palette="Set2"
     )
-    b.axes.set_title('Receiver operating characteristic:' + title, fontsize = 18)
+    b.axes.set_title('Receiver operating characteristic:' + title, fontsize=18)
     b.set_xlabel("Positive", fontsize=18)
     b.set_ylabel("True Positive Rate", fontsize=18)
     plt.setp(b.get_legend().get_texts(), fontsize=13)
@@ -896,6 +918,7 @@ def roc_plot(mc_r, mc_s, title, type):
     # plt.legend(loc="lower right", fontsize = 13)
     # plt.savefig('./roc_plot/{}_{}.png'.format(title, type))
     # plt.show()
+
 
 def result_eval():
     result_path = './mind_raw_obj/'
@@ -972,6 +995,7 @@ def result_eval():
     # roc_plot(m12_r, m12_s, 'm12', type)
     # roc_plot(m21_r, m21_s, 'm21', type)
 
+
 def result_eval_cnn_beam_search():
     result_path = './mind_cnn_beam_search/'
     type = 'mind_full'
@@ -1044,6 +1068,7 @@ def result_eval_cnn_beam_search():
     # roc_plot(m2_r, m2_s, 'm2', type)
     # roc_plot(m12_r, m12_s, 'm12', type)
     # roc_plot(m21_r, m21_s, 'm21', type)
+
 
 def save_roc_plot():
     with open('./roc_socre.p', 'rb') as f:

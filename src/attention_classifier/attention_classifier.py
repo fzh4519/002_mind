@@ -1,3 +1,4 @@
+# 注意分类器
 import numpy as np
 import pickle
 from tqdm import tqdm
@@ -10,6 +11,7 @@ from metadata import *
 from attention_model import *
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sn
 
 
 def get_data(data_path):

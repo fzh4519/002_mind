@@ -195,71 +195,21 @@ class Atomic_node_only_lstm(torch.nn.Module):
         nodes = nodes.view(N * sq_len * max_node_num, 3, 224, 224)
         nodes_feature = self.resnet(nodes).view(N, sq_len, max_node_num, self.nodefeat_n0)
 
-        # #---------------------------------------------------
-        # # edge branch
-        # pred_attmat = torch.autograd.Variable(torch.zeros(N, 2, 5, 2, 4)).cuda() # channel=2
-        #
-        # for sq_i in range(sq_len):
-        #         for h_i in range(2):
-        #             #out = self.resnet(head[:, sq_i, h_i, ...])
-        #             out=nodes_feature[:,sq_i,h_i,:]
-        #
-        #             h_out = self.tanh(out)
-        #
-        #             for t_i in range(4):
-        #                 if t_i!=h_i:
-        #                     ht_pos=torch.cat((pos[:,sq_i,h_i,:], pos[:, sq_i, t_i, :]), -1)
-        #                     out=torch.cat((h_out, ht_pos), -1)
-        #
-        #                     #print(out.shape[:])
-        #                     out=self.fc1(out)
-        #                     out=self.tanh(out)
-        #                     pred_attmat[:,:,sq_i,h_i,t_i]=self.fc2(out) # [N,2, 5,2,4]
-        #
-        # #out=self.conv3d1(pred_attmat)
-        #
-        # edge_out=self.relu(pred_attmat[:,1,...]) # todo: check the dim here [N,1,5,2,4]
-        # out = self.dropout(out)
-
-        # out=self.conv3d2(out)
-        # -----------------------------------------------------
-        # node branch
-        # extract node feature using resnet model and pos info
-
-        # node_feature [N, sq_len, max_node_num, 6] plus pos info
         node_feat = torch.cat((nodes_feature, pos), 3)
-        # ------------------------------------------------------
-        # # get edge feature using node feature
-        # edge_feat = torch.autograd.Variable(torch.zeros(N, sq_len, self.nodefeat_n1*2, max_node_num, max_node_num)).cuda()
-        #
-        # for b_id in range(N):
-        #     for sq_id in range(sq_len):
-        #         valid_node_num=4
-        #         for n_id1 in range(valid_node_num):
-        #             for n_id2 in range(valid_node_num):
-        #                 edge_feat[b_id,sq_id, :,n_id1,n_id2]=torch.cat((node_feat[b_id, sq_id, n_id1, :].clone(), node_feat[b_id, sq_id, n_id2, :].clone()),0)
-
-        # -----------------------------------------------------
         hidden_node_state = torch.autograd.Variable(
             torch.zeros(iterN, N, sq_len, self.nodefeat_n1, max_node_num)).cuda()  # passing round=2
-        # hidden_edge_state=torch.autograd.Variable(torch.zeros(N, 128, max_node_num, max_node_num)).cuda()
-        # pred_label=torch.autograd.Variable(torch.zeros(N,sq_len, max_node_num,6)).cuda()
         pred_label = torch.autograd.Variable(torch.zeros(N, 6)).cuda()
         pred_label0 = torch.autograd.Variable(torch.zeros(N, sq_len, max_node_num, 6)).cuda()
-        # attmat=self.link_fun(edge_feat.view(N*sq_len, 262*2,6,6)).squeeze(1).view(N,sq_len,6,6) # attmat [N, 1, max_node_num, max_node_num]
 
         for pass_rnd in range(iterN):
             for b_id in range(N):
                 # ---------------------------------------
-                # message passing for the whole sequence
-                # for sq_id in range(sq_len):
                 valid_node_num = 4  # num_rec[b_id, 0]
                 for n_id in range(valid_node_num):
 
                     if pass_rnd == 0:
                         h_v = node_feat[b_id, :, n_id, :]  # [sq_len, 262]
                         h_w = node_feat[b_id, :, :valid_node_num, :]
-                    # e_vw = edge_feat[b_id, :, n_id, :valid_node_num]
                     else:
                         h_v = hidden_node_state[pass_rnd - 1, b_id, :, :, n_id]
                         h_w = node_feat[b_id, :, :valid_node_num, :].clone()
@@ -269,61 +219,22 @@ class Atomic_node_only_lstm(torch.nn.Module):
                     m_v = self.message_fun(h_w)  # m_v [sq_len, valid_node_num, 128]
 
                     m_v = attmat_gt[b_id, :, n_id, :valid_node_num].unsqueeze(2).expand_as(m_v) * m_v
-
-                    # for k in range(valid_node_num):
-                    #     hidden_edge_state[b_id, :, n_id, k] = m_v[k, :]
-
                     m_v = torch.sum(m_v, 1)
-                    # m_v [sq_len, 128]
-                    # h_v [sq_len, 262]
                     h_v_new = self.update_fun(m_v[None], h_v[None].contiguous())  # [1, 10, 262]
-
                     hidden_node_state[pass_rnd, b_id, :, :, n_id] = h_v_new  # [2, N, sq_len, 262, max_node_num]
 
                 # ------------------------------------
                 # lstm for the sequence
                 if pass_rnd == (iterN - 1):
-                    sq_node_num = 4  # num_rec[b_id,0]
-                    # for nid in range(sq_node_num):
-
-                    # frame-only classification
-                    # hidden_node_state[pass_rnd, b_id, :, :, nid] [se_len, 262]
-                    # pred_label0[b_id,:,nid,:]=self.readout_fun(hidden_node_state[pass_rnd, b_id, :,:, nid].clone())
-
-                    # input [1, sq_len, 262]
                     self.lstm.flatten_parameters()
-
                     lstm_input = hidden_node_state[pass_rnd, b_id, ...].clone().view(5, -1).unsqueeze(0)  # [1, 5, 48]
-
                     output, (h_n, _) = self.lstm(lstm_input)  # [1, sq_len,  2*262]
-
                     en_out = self.en_fc1(h_n.clone().view(-1))  # 1, 5, 48*2
                     en_out = self.relu(en_out)
                     en_out = self.en_fc2(en_out)
                     en_out = self.relu(en_out)
                     pred_label[b_id, :] = self.en_fc3(en_out)
 
-                    # pred_label[b_id, :] = self.lstm_readout(output.clone().view(-1)) # pred_label [N,sq_len, max_node_num,7]
-
-        # embed edge_out and node_out, cat them together, classify
-        # edge out [N,1,5,2,4]
-        # hidden node state [iterN, N, sq_len, self.nodefeat_n1, max_node_num]
-        # node out [N,5,12,4]
-        # edge_out=edge_out.view(N,-1)
-
-        # node_out=hidden_node_state[iterN-1, ...].clone().view(N,-1)
-        # node_out=self.maxpool(node_out.unsqueeze(1))
-        # node_out=node_out.view(N,-1) # [N, 119]
-        # #en_out=torch.cat((edge_out, node_out),-1) # todo: check the dim here
-        # en_out=node_out
-        # # [N ,159]
-        # en_out=self.en_fc1(en_out)
-        # en_out=self.relu(en_out)
-        # en_out=self.en_fc2(en_out)
-        # en_out=self.relu(en_out)
-        # en_out=self.en_fc3(en_out)
-
-        # return en_out #[N,6]
         return pred_label
 
 

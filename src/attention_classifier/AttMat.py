@@ -1,3 +1,5 @@
+# 未被其他程序调用
+
 import sys
 sys.path.append("/home/lfan/Dropbox/Projects/ICCV19/RunComm/src/")
 import torch

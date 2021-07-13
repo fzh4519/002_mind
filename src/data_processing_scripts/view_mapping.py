@@ -32,17 +32,17 @@ class ViewMap:
                           'sandwich': ['banana', 'teddy bear', 'sandwich'],
                           'teddy bear': ['sandwich', 'banana', 'teddy bear']}
         self.obj_refer_94342 = {'handbag': ['handbag', 'suitcase', 'backpack', 'bowl'],
-                          'bowl': ['handbag', 'suitcase', 'backpack', 'bowl'],
-                          'suitcase': ['handbag', 'suitcase', 'backpack', 'bowl'],
-                          'backpack': ['handbag', 'suitcase', 'backpack', 'bowl'],
-                          'apple': ['apple', 'sports ball'],
-                          'sports ball': ['apple', 'sports ball'],
-                          'cup': ['remote', 'bottle', 'cup', 'wine glass'],
-                          'remote': ['cup', 'bottle', 'remote', 'wine glass'],
-                          'bottle': ['cup', 'remote', 'bottle', 'wine glass'],
-                          'wine glass': ['cup', 'remote', 'bottle', 'wine glass'],
-                          'sandwich': ['teddy bear', 'sandwich'],
-                          'teddy bear': ['sandwich', 'teddy bear']}
+                                'bowl': ['handbag', 'suitcase', 'backpack', 'bowl'],
+                                'suitcase': ['handbag', 'suitcase', 'backpack', 'bowl'],
+                                'backpack': ['handbag', 'suitcase', 'backpack', 'bowl'],
+                                'apple': ['apple', 'sports ball'],
+                                'sports ball': ['apple', 'sports ball'],
+                                'cup': ['remote', 'bottle', 'cup', 'wine glass'],
+                                'remote': ['cup', 'bottle', 'remote', 'wine glass'],
+                                'bottle': ['cup', 'remote', 'bottle', 'wine glass'],
+                                'wine glass': ['cup', 'remote', 'bottle', 'wine glass'],
+                                'sandwich': ['teddy bear', 'sandwich'],
+                                'teddy bear': ['sandwich', 'teddy bear']}
         self.obj_refer_b4 = {'handbag': ['handbag', 'suitcase', 'backpack'],
                              'suitcase': ['handbag', 'suitcase', 'backpack'],
                              'backpack': ['handbag', 'suitcase', 'backpack'],
@@ -58,21 +58,21 @@ class ViewMap:
                              'donut': ['banana', 'teddy bear', 'sandwich'],
                              'teddy bear': ['sandwich', 'banana', 'donut']}
         self.obj_refer_b = {'handbag': ['handbag', 'suitcase', 'backpack'],
-                             'suitcase': ['handbag', 'suitcase', 'backpack', 'chair'],
-                             'backpack': ['handbag', 'suitcase', 'backpack', 'chair'],
-                             'apple': ['apple', 'sports ball', 'bowl'],
-                             'bowl': ['apple', 'banana'],
-                             'book': ['tv'],
-                             'sports ball': ['apple', 'sports ball'],
-                             'laptop':['book'],
-                             'cup': ['bottle', 'wine glass', 'cell phone', 'remote'],
-                             'bottle': ['cup', 'wine glass', 'cell phone', 'remote'],
-                             'cell phone': ['cup', 'wine glass', 'bottle'],
-                             'wine glass': ['cup', 'bottle', 'cell phone'],
-                             'banana': ['sandwich', 'teddy bear', 'donut', 'bowl'],
-                             'sandwich': ['banana', 'teddy bear', 'donut'],
-                             'donut': ['banana', 'teddy bear', 'sandwich', 'dog' , 'person'],
-                             'teddy bear': ['sandwich', 'banana', 'donut', 'dog', 'person']}
+                            'suitcase': ['handbag', 'suitcase', 'backpack', 'chair'],
+                            'backpack': ['handbag', 'suitcase', 'backpack', 'chair'],
+                            'apple': ['apple', 'sports ball', 'bowl'],
+                            'bowl': ['apple', 'banana'],
+                            'book': ['tv'],
+                            'sports ball': ['apple', 'sports ball'],
+                            'laptop': ['book'],
+                            'cup': ['bottle', 'wine glass', 'cell phone', 'remote'],
+                            'bottle': ['cup', 'wine glass', 'cell phone', 'remote'],
+                            'cell phone': ['cup', 'wine glass', 'bottle'],
+                            'wine glass': ['cup', 'bottle', 'cell phone'],
+                            'banana': ['sandwich', 'teddy bear', 'donut', 'bowl'],
+                            'sandwich': ['banana', 'teddy bear', 'donut'],
+                            'donut': ['banana', 'teddy bear', 'sandwich', 'dog', 'person'],
+                            'teddy bear': ['sandwich', 'banana', 'donut', 'dog', 'person']}
         self.trackers = {'test1': 'skele1.p', 'test2': 'skele2.p', 'test6': 'skele2.p', 'test7': 'skele1.p',
                          'test_9434_1': 'skele2.p', 'test_9434_3': 'skele2.p', 'test_9434_18': 'skele1.p',
                          'test_94342_0': 'skele2.p', 'test_94342_1': 'skele2.p', 'test_94342_2': 'skele2.p',
@@ -110,7 +110,6 @@ class ViewMap:
         # self.temp_path = ["test_boelter_3", "test_boelter_24", "test_94342_24", "test_94342_18", "test_94342_7", "test_boelter4_3"]
         self.temp_path = ["test1"]
 
-
     def extract_feature(self, cropped_img):
         hists = np.zeros((np.arange(0, 256).shape[0] - 1) * 3)
         hists[:255] = np.histogram(cropped_img[:, :, 0], bins=np.arange(0, 256), density=True)[0]
@@ -118,17 +117,15 @@ class ViewMap:
         hists[255 * 2:255 * 3] = np.histogram(cropped_img[:, :, 2], bins=np.arange(0, 256), density=True)[0]
         return hists
 
-
     def extract_feature_mask(self, cropped_img, mask):
         hists = np.zeros((np.arange(0, 256).shape[0] - 1) * 3)
-        cropped_img[mask] = cropped_img[mask]*0.5 + [50, 0, 0]
+        cropped_img[mask] = cropped_img[mask] * 0.5 + [50, 0, 0]
 
         hists[:255] = np.histogram(cropped_img[:, :, 0][mask], bins=np.arange(0, 256), density=True)[0]
         hists[255:255 * 2] = np.histogram(cropped_img[:, :, 1][mask], bins=np.arange(0, 256), density=True)[0]
         hists[255 * 2:255 * 3] = np.histogram(cropped_img[:, :, 2][mask], bins=np.arange(0, 256), density=True)[0]
 
         return hists
-
 
     def extract_gaze(self, skeleton):
         skeleton = np.array(skeleton)
@@ -141,7 +138,6 @@ class ViewMap:
         gaze_center = np.vstack([skeleton[21], skeleton[22], skeleton[24]]).mean(axis=0) + np.array([0, 0.2, 0])
         return normal, gaze_center
 
-
     def cal_angle(self, normal, obj):
         if np.linalg.norm(obj) > 0:
             obj = obj / np.linalg.norm(obj)
@@ -149,7 +145,6 @@ class ViewMap:
             normal = normal / np.linalg.norm(normal)
         cosin = obj.dot(normal)
         return cosin
-
 
     def point2screen(self, points):
         K = [607.13232421875, 0.0, 638.6468505859375, 0.0, 607.1067504882812, 367.1607360839844, 0.0, 0.0, 1.0]
@@ -167,7 +162,6 @@ class ViewMap:
         points_screen = points_screen.reshape(-1)
         return points_screen
 
-
     def extract_alpha(self, img):
         img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         input_range = np.max(img_gray) - np.min(img_gray)
@@ -176,31 +170,25 @@ class ViewMap:
         beta = -np.min(img_gray) * alpha
         return alpha, beta
 
-
     def hist_match(self, source, template):
         """
-        Adjust the pixel values of a grayscale image such that its histogram
-        matches that of a target image
-
-        Arguments:
-        -----------
-            source: np.ndarray
-                Image to transform; the histogram is computed over the flattened
-                array
-            template: np.ndarray
-                Template image; can have different dimensions to source
-        Returns:
-        -----------
-            matched: np.ndarray
-                The transformed output image
-        """
-
+                 调整灰度图像的像素值，使其直方图与目标图像的直方图相匹配
+                 参数：
+                 -----------
+                     来源：np.ndarray
+                         要变换的图像； 直方图是在扁平数组上计算的
+                     模板：np.ndarray
+                         模板图像； 可以有不同的尺寸来源
+                 返回：
+                 -----------
+                     匹配： np.ndarray
+                         转换后的输出图像
+                 """
         oldshape = source.shape
         source = source.ravel()
         template = template.ravel()
 
-        # get the set of unique pixel values and their corresponding indices and
-        # counts
+        # 获取一组唯一的像素值及其对应的索引和计数
         s_values, bin_idx, s_counts = np.unique(source, return_inverse=True,
                                                 return_counts=True)
         t_values, t_counts = np.unique(template, return_counts=True)
@@ -236,7 +224,6 @@ class ViewMap:
         cv2.normalize(hist_base, hist_base, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
         return hist_base
 
-
     def mapping(self):
         video_folders = os.listdir(self.tracker_img_path)
         for video_folder in video_folders:
@@ -266,7 +253,7 @@ class ViewMap:
                 if len(clip.split('_')) > 1 and clip.split('_')[1] == "boelter4":
                     obj_refer = self.obj_refer_b4
                 elif len(clip.split('_')) > 1 and (clip.split('_')[1] == "boelter" or clip.split('_')[1] == "boelter2"
-                        or clip.split('_')[1] == "boelter3"):
+                                                   or clip.split('_')[1] == "boelter3"):
                     obj_refer = self.obj_refer_b
                 elif len(clip.split('_')) > 1 and clip.split('_')[1] == "94342":
                     obj_refer = self.obj_refer_94342
@@ -432,7 +419,7 @@ class ViewMap:
 
                         mask = mask_objs[mask_cates[key][frame_id][1]][1][mask_cates[key][frame_id][2]]
                         if key == './post_box_reid/test_9434_1/4.p':
-                            print(len(mask[mask>0]))
+                            print(len(mask[mask > 0]))
                         if np.mean(np.array(mask)) == 0:
                             continue
 
@@ -515,7 +502,8 @@ class ViewMap:
                                       (255, 0, 0), thickness=3)
                         cv2.putText(to_draw,
                                     kinect_features[idx][0].split('/')[-1] + ':' +
-                                    obj_cates[key][0] + ':' + "{:.2f}".format(dists[idx]), (int(kinect_box[0]), int(kinect_box[1])),
+                                    obj_cates[key][0] + ':' + "{:.2f}".format(dists[idx]),
+                                    (int(kinect_box[0]), int(kinect_box[1])),
                                     cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 255), 2, cv2.LINE_AA)
                     else:
                         kinect_target.append(None)
@@ -554,7 +542,8 @@ class ViewMap:
                 mask_cates = joblib.load(f)
 
             point_names = sorted(glob.glob(self.kinect_point_path + clip + '/*.p'))
-            kinect_img_names = sorted(glob.glob(os.path.join('../../data_preprocessing2/annotations/', clip) + '/kinect/*.jpg'))
+            kinect_img_names = sorted(
+                glob.glob(os.path.join('../../data_preprocessing2/annotations/', clip) + '/kinect/*.jpg'))
             outputs = []
             target_reformats = []
             for frame_id, skeleton_frame in enumerate(skeleton_frames):
@@ -590,8 +579,6 @@ class ViewMap:
             #     joblib.dump(outputs, f)
             # with open(save_path + '/others.p', 'wb') as f:
             #     joblib.dump(target_reformats, f)
-
-
 
 
 if __name__ == "__main__":

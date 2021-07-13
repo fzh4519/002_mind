@@ -6,6 +6,7 @@ import glob
 import numpy as np
 import random
 
+
 def get_data():
     annotation_path = './regenerate_annotation/'
     bbox_path = './reformat_annotation/'
@@ -53,73 +54,18 @@ def get_data():
                     if flag_m1:
                         negative_p1 = frame_id
                         flag_m1 = 0
-                    # img = cv2.imread(img_names[frame_id])
-                    # obj_frame = annt.loc[(annt.frame == frame_id) & (annt.name == obj_name)]
-                    #
-                    # x_min = obj_frame['x_min'].item()
-                    # y_min = obj_frame['y_min'].item()
-                    # x_max = obj_frame['x_max'].item()
-                    # y_max = obj_frame['y_max'].item()
-                    #
-                    # img_patch = img[y_min:y_max, x_min:x_max]
-                    #
-                    # # hog
-                    # hog = np.hstack([p1_hog[frame_id][-162 - 10:-10], p2_hog[frame_id][-162 - 10:-10]])
-                    # training_input.append([img_patch, hog])
                     label[1] = 1
 
                 if obj_records[obj_name][frame_id]['m2']['fluent'] == 0:
                     if flag_m2:
                         negative_p2 = frame_id
                         flag_m2 = 0
-                    # img = cv2.imread(img_names[frame_id])
-                    # obj_frame = annt.loc[(annt.frame == frame_id) & (annt.name == obj_name)]
-                    #
-                    # x_min = obj_frame['x_min'].item()
-                    # y_min = obj_frame['y_min'].item()
-                    # x_max = obj_frame['x_max'].item()
-                    # y_max = obj_frame['y_max'].item()
-                    #
-                    # img_patch = img[y_min:y_max, x_min:x_max]
-                    #
-                    # # hog
-                    # hog = np.hstack([p1_hog[frame_id][-162 - 10:-10], p2_hog[frame_id][-162 - 10:-10]])
-                    # training_input.append([img_patch, hog])
-                    # training_output.append(2)
                     label[2] = 1
 
                 if obj_records[obj_name][frame_id]['m1']['fluent'] == 2:
-                    # img = cv2.imread(img_names[frame_id])
-                    # obj_frame = annt.loc[(annt.frame == frame_id) & (annt.name == obj_name)]
-                    #
-                    # x_min = obj_frame['x_min'].item()
-                    # y_min = obj_frame['y_min'].item()
-                    # x_max = obj_frame['x_max'].item()
-                    # y_max = obj_frame['y_max'].item()
-                    #
-                    # img_patch = img[y_min:y_max, x_min:x_max]
-                    #
-                    # # hog
-                    # hog = np.hstack([p1_hog[frame_id][-162 - 10:-10], p2_hog[frame_id][-162 - 10:-10]])
-                    # training_input.append([img_patch, hog])
-                    # training_output.append(1)
                     label[1] = 1
 
                 if obj_records[obj_name][frame_id]['m2']['fluent'] == 2:
-                    # img = cv2.imread(img_names[frame_id])
-                    # obj_frame = annt.loc[(annt.frame == frame_id) & (annt.name == obj_name)]
-                    #
-                    # x_min = obj_frame['x_min'].item()
-                    # y_min = obj_frame['y_min'].item()
-                    # x_max = obj_frame['x_max'].item()
-                    # y_max = obj_frame['y_max'].item()
-                    #
-                    # img_patch = img[y_min:y_max, x_min:x_max]
-                    #
-                    # # hog
-                    # hog = np.hstack([p1_hog[frame_id][-162 - 10:-10], p2_hog[frame_id][-162 - 10:-10]])
-                    # training_input.append([img_patch, hog])
-                    # training_output.append(2)
                     label[2] = 1
 
                 if np.all(label == 0):
@@ -149,7 +95,7 @@ def get_data():
                     training_output.append(label)
 
         random.shuffle(negative_ids)
-        ratio = len(training_input)/2
+        ratio = len(training_input) / 2
         negative_ids_picked = negative_ids[:ratio]
         for obj_name, frame_id in negative_ids_picked:
             img = cv2.imread(img_names[frame_id])
@@ -161,9 +107,6 @@ def get_data():
             y_max = obj_frame['y_max'].item()
 
             img_patch = img[y_min:y_max, x_min:x_max]
-            # cv2.rectangle(img, (int(x_min), int(y_min)), (int(x_max), int(y_max)), (255, 0, 0), thickness=2)
-            # cv2.imshow('img', img)
-            # cv2.waitKey(2000)
 
             # hog
             hog = np.hstack([p1_hog[frame_id][-162 - 10:-10], p2_hog[frame_id][-162 - 10:-10]])
